@@ -1,0 +1,67 @@
+# =============================================================================
+# MPP Predictor — Paramètres du modèle
+# =============================================================================
+# Toutes les constantes "magiques" du modèle vivent ici, pas dans le code.
+# Principe Ockham : peu de paramètres, tous justifiés, tous ajustables sans
+# toucher à une ligne de Python.
+
+attack_index:
+  # Pondérations des 3 critères de l'Index d'Attaque. Doivent sommer à 1.0
+  # (validé au chargement).
+  weights:
+    dynamics: 0.50      # D — dynamique offensive récente
+    freshness: 0.30     # F — fraîcheur / charge des cadres offensifs
+    context: 0.20       # C — ajustement contextuel (météo, repos, enjeu)
+
+  dynamics:
+    n_recent_matches: 8         # fenêtre glissante de matchs considérés
+    time_decay_lambda: 0.90     # amortissement par récence (0.85–0.95)
+    use_opponent_strength: true # pondérer par la force adverse (Elo)
+
+  freshness:
+    # Courbe en U inversé : rendement maximal au "sweet spot", chute aux
+    # deux extrêmes (sous-régime ET surrégime).
+    optimal_matches: 38     # m_opt — pic de la gaussienne
+    sigma: 15.0             # largeur de la cloche
+    key_players_count: 5    # nb de cadres offensifs pris en compte
+
+  context:
+    # Multiplicateur centré sur 1.0, borné pour éviter les valeurs extrêmes.
+    min_factor: 0.85
+    max_factor: 1.15
+
+defense_index:
+  # Structure miroir de l'attaque.
+  weights:
+    dynamics: 0.50
+    freshness: 0.30
+    context: 0.20
+
+  dynamics:
+    n_recent_matches: 8
+    time_decay_lambda: 0.90
+    use_opponent_strength: true
+
+  freshness:
+    optimal_matches: 38
+    sigma: 15.0
+    key_players_count: 5
+
+  context:
+    min_factor: 0.85
+    max_factor: 1.15
+
+poisson:
+  max_goals: 8   # taille de la matrice de scores (0..8 par équipe)
+  dixon_coles_rho: -0.05   # correction des scores serrés (calibré, 0 = Poisson pur)
+
+elo:
+  # Intensité de l'effet Elo sur l'espérance de buts. 0 = pas d'effet Elo,
+  # valeur plus haute = l'écart de force pèse plus lourd. Calibré sur backtest.
+  strength: 0.40
+
+# Barème de points Mon Petit Prono (à ajuster selon ta ligue).
+mpp_scoring:
+  exact_score: 3        # score exact trouvé
+  goal_difference: 2    # bonne différence de buts (mais pas score exact)
+  correct_outcome: 1    # bon résultat (1/N/2) seulement

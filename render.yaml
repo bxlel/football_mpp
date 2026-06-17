@@ -1,0 +1,15 @@
+# Configuration de déploiement pour Render (https://render.com)
+# Render lit ce fichier automatiquement quand tu connectes ton dépôt GitHub.
+services:
+  - type: web
+    name: mpp-predictor
+    runtime: python
+    plan: free
+    buildCommand: |
+      pip install -r requirements.txt
+      pip install -e .
+      curl -sL https://raw.githubusercontent.com/martj42/international_results/master/results.csv -o data/raw/results.csv
+    startCommand: gunicorn --chdir . web.app:app --bind 0.0.0.0:$PORT --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
