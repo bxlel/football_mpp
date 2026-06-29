@@ -1,30 +1,25 @@
-"""Drapeaux (emoji) des sélections nationales pour l'habillage de l'interface.
+"""Drapeaux des sélections (codes ISO pour flagcdn.com - fiables partout)."""
 
-On utilise les emoji drapeaux : ils s'affichent partout sans télécharger
-d'images. Les équipes non listées reçoivent un drapeau neutre.
-"""
-
-FLAGS = {
-    "Algeria": "🇩🇿", "Argentina": "🇦🇷", "Australia": "🇦🇺", "Austria": "🇦🇹",
-    "Belgium": "🇧🇪", "Bosnia and Herzegovina": "🇧🇦", "Brazil": "🇧🇷",
-    "Canada": "🇨🇦", "Cape Verde": "🇨🇻", "Colombia": "🇨🇴", "Croatia": "🇭🇷",
-    "Curaçao": "🇨🇼", "Czech Republic": "🇨🇿", "DR Congo": "🇨🇩", "Ecuador": "🇪🇨",
-    "Egypt": "🇪🇬", "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "France": "🇫🇷", "Germany": "🇩🇪",
-    "Ghana": "🇬🇭", "Haiti": "🇭🇹", "Iran": "🇮🇷", "Iraq": "🇮🇶",
-    "Ivory Coast": "🇨🇮", "Japan": "🇯🇵", "Jordan": "🇯🇴", "Mexico": "🇲🇽",
-    "Morocco": "🇲🇦", "Netherlands": "🇳🇱", "New Zealand": "🇳🇿", "Norway": "🇳🇴",
-    "Panama": "🇵🇦", "Paraguay": "🇵🇾", "Portugal": "🇵🇹", "Qatar": "🇶🇦",
-    "Saudi Arabia": "🇸🇦", "Scotland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "Senegal": "🇸🇳",
-    "South Africa": "🇿🇦", "South Korea": "🇰🇷", "Spain": "🇪🇸", "Sweden": "🇸🇪",
-    "Switzerland": "🇨🇭", "Tunisia": "🇹🇳", "Turkey": "🇹🇷", "United States": "🇺🇸",
-    "Uruguay": "🇺🇾", "Uzbekistan": "🇺🇿",
+ISO = {
+    "Algeria": "dz", "Argentina": "ar", "Australia": "au", "Austria": "at",
+    "Belgium": "be", "Bosnia and Herzegovina": "ba", "Brazil": "br",
+    "Canada": "ca", "Cape Verde": "cv", "Colombia": "co", "Croatia": "hr",
+    "Curaçao": "cw", "Czech Republic": "cz", "DR Congo": "cd", "Ecuador": "ec",
+    "Egypt": "eg", "England": "gb-eng", "France": "fr", "Germany": "de",
+    "Ghana": "gh", "Haiti": "ht", "Iran": "ir", "Iraq": "iq",
+    "Ivory Coast": "ci", "Japan": "jp", "Jordan": "jo", "Mexico": "mx",
+    "Morocco": "ma", "Netherlands": "nl", "New Zealand": "nz", "Norway": "no",
+    "Panama": "pa", "Paraguay": "py", "Portugal": "pt", "Qatar": "qa",
+    "Saudi Arabia": "sa", "Scotland": "gb-sct", "Senegal": "sn",
+    "South Africa": "za", "South Korea": "kr", "Spain": "es", "Sweden": "se",
+    "Switzerland": "ch", "Tunisia": "tn", "Turkey": "tr", "United States": "us",
+    "Uruguay": "uy", "Uzbekistan": "uz",
 }
 
-# Couleur d'accent par équipe (pour les bandes), dérivée du drapeau dominant.
 ACCENT = {
     "Algeria": "#0a8f3c", "Argentina": "#6cabdd", "Australia": "#f4c500",
     "Austria": "#ed2939", "Belgium": "#e30613", "Bosnia and Herzegovina": "#004494",
-    "Brazil": "#ffdf00", "Canada": "#d52b1e", "Cape Verde": "#1a3a7a",
+    "Brazil": "#009b3a", "Canada": "#d52b1e", "Cape Verde": "#1a3a7a",
     "Colombia": "#fcd116", "Croatia": "#e8112d", "Curaçao": "#002b7f",
     "Czech Republic": "#d7141a", "DR Congo": "#007fff", "Ecuador": "#ffd100",
     "Egypt": "#c8102e", "England": "#cf081f", "France": "#21304f",
@@ -35,15 +30,13 @@ ACCENT = {
     "Panama": "#005293", "Paraguay": "#d52b1e", "Portugal": "#a01419",
     "Qatar": "#8a1538", "Saudi Arabia": "#0a6e3c", "Scotland": "#0a3161",
     "Senegal": "#0a843f", "South Africa": "#007749", "South Korea": "#0047a0",
-    "Spain": "#c60b1e", "Sweden": "#fecb00", "Switzerland": "#d52b1e",
+    "Spain": "#c60b1e", "Sweden": "#0057b7", "Switzerland": "#d52b1e",
     "Tunisia": "#e70013", "Turkey": "#e30a17", "United States": "#0a3161",
     "Uruguay": "#5ba3d0", "Uzbekistan": "#0099b5",
 }
 
-
 def flag(team_name: str) -> str:
-    return FLAGS.get(team_name, "🏳️")
-
+    return ISO.get(team_name, "")
 
 def accent(team_name: str) -> str:
     return ACCENT.get(team_name, "#8aa395")

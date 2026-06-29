@@ -5,33 +5,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MPP — Tableau phases finales</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;600;700&family=Rajdhani:wght@500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-  :root{--turf:#0a1410;--card:#10211a;--card2:#16291f;--line:#233a2e;--ink:#eaf2ec;--muted:#8aa395;--ball:#ff5722;--grass:#1db954;--gold:#ffc233;--chalk:#cfe3d6;}
+  :root{--turf:#0a1410;--card:#10211a;--card2:#16291f;--line:#233a2e;--ink:#eaf2ec;--muted:#8aa395;--ball:#1f7aec;--grass:#1db954;--gold:#ffc233;--chalk:#cfe3d6;}
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{background:var(--turf);background-image:repeating-linear-gradient(90deg,transparent,transparent 58px,rgba(255,255,255,.012) 58px,rgba(255,255,255,.012) 116px);color:var(--ink);font-family:'Inter',sans-serif;min-height:100vh;}
+  body{background:var(--turf);background-image:repeating-linear-gradient(90deg,transparent,transparent 58px,rgba(255,255,255,.012) 58px,rgba(255,255,255,.012) 116px);color:var(--ink);font-family:'Rajdhani',sans-serif;min-height:100vh;}
   .wrap{max-width:880px;margin:0 auto;padding:0 16px 80px;}
   .masthead{border-bottom:2px solid var(--ball);padding:16px 0 14px;display:flex;align-items:baseline;gap:12px;}
-  .mh-logo{font-family:'Oswald';font-size:30px;letter-spacing:-.02em;text-transform:uppercase;line-height:.8;}
+  .mh-logo{font-family:'Teko';font-size:30px;letter-spacing:-.02em;text-transform:uppercase;line-height:.8;}
   .mh-logo .x{color:var(--ball);}
   .mh-sub{font-family:'JetBrains Mono';font-size:11px;color:var(--muted);letter-spacing:.18em;text-transform:uppercase;}
   .mh-right{margin-left:auto;font-family:'JetBrains Mono';font-size:11px;color:var(--ball);letter-spacing:.12em;}
   .tabs{display:flex;margin-top:16px;border:1px solid var(--line);border-radius:3px;overflow:hidden;}
-  .tabs a{flex:1;text-align:center;padding:12px;color:var(--muted);text-decoration:none;font-family:'Inter';font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.08em;}
-  .tabs a.on{background:var(--ball);color:#1a0a00;}
+  .tabs a{flex:1;text-align:center;padding:12px;color:var(--muted);text-decoration:none;font-family:'Rajdhani';font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.08em;}
+  .tabs a.on{background:var(--ball);color:#02122e;}
   .hero{padding:30px 0 8px;}
   .hero .eyebrow{font-family:'JetBrains Mono';font-size:12px;letter-spacing:.25em;text-transform:uppercase;color:var(--ball);margin-bottom:10px;}
-  .hero h1{font-family:'Oswald';font-size:clamp(36px,8vw,64px);line-height:.86;text-transform:uppercase;}
+  .hero h1{font-family:'Teko';font-size:clamp(36px,8vw,64px);line-height:.86;text-transform:uppercase;}
   .hero h1 em{font-style:normal;color:var(--ball);}
   .hero p{color:var(--muted);margin-top:12px;font-size:14px;max-width:60ch;}
-  .warn{background:rgba(255,87,34,.08);border:1px solid rgba(255,87,34,.25);border-radius:5px;padding:13px 15px;margin:16px 0;font-family:'Inter';font-size:13px;color:#ffb59c;line-height:1.5;}
-  .champ{background:linear-gradient(135deg,rgba(255,194,51,.16),rgba(255,87,34,.10));border:1.5px solid var(--gold);border-radius:8px;padding:22px;text-align:center;margin-bottom:6px;}
+  .warn{background:rgba(31,122,236,.08);border:1px solid rgba(31,122,236,.25);border-radius:5px;padding:13px 15px;margin:16px 0;font-family:'Rajdhani';font-size:13px;color:#ffb59c;line-height:1.5;}
+  .champ{background:linear-gradient(135deg,rgba(255,194,51,.16),rgba(31,122,236,.10));border:1.5px solid var(--gold);border-radius:8px;padding:22px;text-align:center;margin-bottom:6px;}
   .champ-l{font-family:'JetBrains Mono';font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);}
-  .champ-n{font-family:'Oswald';font-size:clamp(36px,8vw,58px);text-transform:uppercase;color:var(--gold);line-height:1;margin:8px 0;text-shadow:0 0 26px rgba(255,194,51,.4);}
+  .champ-n{font-family:'Teko';font-size:clamp(36px,8vw,58px);text-transform:uppercase;color:var(--gold);line-height:1;margin:8px 0;text-shadow:0 0 26px rgba(255,194,51,.4);}
   .champ-note{font-family:'JetBrains Mono';font-size:11px;color:var(--muted);}
   .rhead{display:flex;align-items:center;gap:10px;margin:26px 0 12px;}
   .rhead .bar{width:4px;height:24px;background:var(--ball);}
-  .rhead h2{font-family:'Oswald';font-size:22px;text-transform:uppercase;letter-spacing:.01em;}
+  .rhead h2{font-family:'Teko';font-size:22px;text-transform:uppercase;letter-spacing:.01em;}
   .rhead .ct{margin-left:auto;font-family:'JetBrains Mono';font-size:11px;color:var(--muted);}
   .m{background:var(--card);border:1px solid var(--line);border-radius:5px;margin-bottom:10px;overflow:hidden;}
   .m-top{display:grid;grid-template-columns:1fr 92px 1fr;align-items:stretch;}
@@ -40,21 +40,21 @@
   .mt-stripe{width:9px;align-self:stretch;}
   .mt-b{padding:11px 14px;flex:1;}
   .mt.away .mt-b{text-align:right;}
-  .mt-n{font-family:'Oswald';font-size:clamp(17px,3.4vw,24px);text-transform:uppercase;line-height:.92;}
+  .mt-n{font-family:'Teko';font-size:clamp(17px,3.4vw,24px);text-transform:uppercase;line-height:.92;}
   .mt-n.win{color:var(--grass);}
   .mt-e{font-family:'JetBrains Mono';font-size:10.5px;color:var(--muted);margin-top:4px;}
   .m-sc{display:flex;align-items:center;justify-content:center;gap:5px;background:var(--turf);}
   .flap{font-family:'JetBrains Mono';font-weight:700;font-size:26px;background:#070d0a;color:var(--ball);border-radius:3px;padding:5px 9px;line-height:1;box-shadow:inset 0 -2px 0 rgba(0,0,0,.5);}
   .m-foot{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:8px 14px;background:var(--card2);border-top:1px solid var(--line);font-family:'JetBrains Mono';font-size:11.5px;color:var(--muted);}
-  .pass{background:var(--grass);color:#062a12;font-family:'Inter';font-weight:800;padding:2px 9px;border-radius:2px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;}
-  .ot{margin-left:auto;font-family:'Inter';font-weight:700;padding:2px 9px;border-radius:2px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;}
-  .ot.high{background:rgba(255,87,34,.18);color:#ff8a6a;}
+  .pass{background:var(--grass);color:#062a12;font-family:'Rajdhani';font-weight:800;padding:2px 9px;border-radius:2px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;}
+  .ot{margin-left:auto;font-family:'Rajdhani';font-weight:700;padding:2px 9px;border-radius:2px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;}
+  .ot.high{background:rgba(31,122,236,.18);color:#5fa0ff;}
   .ot.mid{background:rgba(255,194,51,.16);color:var(--gold);}
   .ot.low{background:rgba(29,185,84,.14);color:var(--grass);}
   .legend{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin:14px 0;font-family:'JetBrains Mono';font-size:11px;color:var(--muted);}
   .legend span{display:flex;align-items:center;gap:5px;}
   .dot{width:9px;height:9px;border-radius:50%;}
-  .loading{text-align:center;color:var(--muted);padding:40px;font-family:'Oswald';font-size:18px;}
+  .loading{text-align:center;color:var(--muted);padding:40px;font-family:'Teko';font-size:18px;}
   footer{text-align:center;color:var(--muted);font-family:'JetBrains Mono';font-size:11px;margin-top:24px;line-height:1.8;}
 </style>
 </head>
@@ -77,11 +77,11 @@
   </div>
 
   <div class="warn">
-    <b>⚠️ Lecture :</b> le modèle est prudent et faible sur les matchs serrés. Quand le risque de prolongation est <b style="color:#ff8a6a">élevé</b>, méfie-toi du petit score — 1 match KO sur 4 part en prolongation et finit plus ouvert (2-1, 3-2). C'est là que ton flair compte.
+    <b>⚠️ Lecture :</b> le modèle est prudent et faible sur les matchs serrés. Quand le risque de prolongation est <b style="color:#5fa0ff">élevé</b>, méfie-toi du petit score — 1 match KO sur 4 part en prolongation et finit plus ouvert (2-1, 3-2). C'est là que ton flair compte.
   </div>
 
   <div class="legend">
-    <span><span class="dot" style="background:#ff8a6a"></span>Prolongation probable</span>
+    <span><span class="dot" style="background:#5fa0ff"></span>Prolongation probable</span>
     <span><span class="dot" style="background:var(--gold)"></span>Risque moyen</span>
     <span><span class="dot" style="background:var(--grass)"></span>Issue nette</span>
   </div>
@@ -95,6 +95,8 @@
 </div>
 <script>
 const $=(id)=>document.getElementById(id);
+const flagImg=(c,h=15)=>c?`<img src="https://flagcdn.com/h${h*2}/${c}.png" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:c.toUpperCase(),style:'font-family:JetBrains Mono;font-size:'+(h-3)+'px;color:#5fa0ff;font-weight:700;margin:0 5px;'}))" style="height:${h}px;border-radius:2px;vertical-align:middle;box-shadow:0 0 0 1px rgba(0,0,0,.3);margin:0 5px;" alt="">`:'';
+
 async function load(){
   try{const r=await fetch('/api/bracket');render(await r.json());}
   catch(e){$('rounds').innerHTML='<div class="loading">Erreur de chargement.</div>';}
@@ -103,7 +105,7 @@ function render(d){
   const oc={'élevé':'high','moyen':'mid','faible':'low'},ol={'élevé':'Prolongation probable','moyen':'Risque moyen','faible':'Issue nette'};
   let h='';
   if(d.champion){
-    h+=`<div class="champ"><div class="champ-l">🏆 Champion prédit</div><div class="champ-n">${d.champion_flag||''} ${d.champion}</div><div class="champ-note">Simulation complète — chaque vainqueur avance au tour suivant</div></div>`;
+    h+=`<div class="champ"><div class="champ-l">🏆 Champion prédit</div><div class="champ-n">${flagImg(d.champion_flag,28)}${d.champion}</div><div class="champ-note">Simulation complète — chaque vainqueur avance au tour suivant</div></div>`;
   }
   d.rounds.forEach(rnd=>{
     if(!rnd.matches.length)return;
@@ -112,9 +114,9 @@ function render(d){
       const hw=m.winner===m.home,aw=m.winner===m.away;
       const[sh,sa]=m.score.split('-');
       return `<div class="m"><div class="m-top">
-        <div class="mt home"><div class="mt-stripe" style="background:${m.home_c1}"></div><div class="mt-b"><div class="mt-n ${hw?'win':''}">${m.home_flag||''} ${m.home}</div><div class="mt-e">ELO ${m.elo_home}</div></div></div>
+        <div class="mt home"><div class="mt-stripe" style="background:${m.home_c1}"></div><div class="mt-b"><div class="mt-n ${hw?'win':''}">${flagImg(m.home_flag)}${m.home}</div><div class="mt-e">ELO ${m.elo_home}</div></div></div>
         <div class="m-sc"><span class="flap">${sh}</span><span class="flap">${sa}</span></div>
-        <div class="mt away"><div class="mt-stripe" style="background:${m.away_c1}"></div><div class="mt-b"><div class="mt-n ${aw?'win':''}">${m.away} ${m.away_flag||''}</div><div class="mt-e">ELO ${m.elo_away}</div></div></div>
+        <div class="mt away"><div class="mt-stripe" style="background:${m.away_c1}"></div><div class="mt-b"><div class="mt-n ${aw?'win':''}">${m.away}${flagImg(m.away_flag)}</div><div class="mt-e">ELO ${m.elo_away}</div></div></div>
       </div><div class="m-foot"><span class="pass">${m.winner} passe</span><span>conf ${m.prob}% · écart ${m.elo_gap}</span><span class="ot ${oc[m.ot_risk]}">${ol[m.ot_risk]}</span></div></div>`;
     }).join('');
   });

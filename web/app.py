@@ -536,22 +536,26 @@ def bracket():
                 out.append(None)
         return out
 
-    r16 = next_round(r32)      # 8es -> 16es (16->8)
-    qf = next_round(r16)       # quarts (8->4)
-    sf = next_round(qf)        # demies (4->2)
-    final = next_round(sf)     # finale (2->1)
+    r16 = next_round(r32)
+    r8 = next_round(r16)
+    r4 = next_round(r8)
+    r2 = next_round(r4)
 
-    champion = final[0]["winner"] if final and final[0] else None
+    champion = r2[0]["winner"] if r2 and r2[0] else None
     champion_flag = flag(champion) if champion else None
 
+    NAMES = {16: "32es de finale", 8: "16es de finale", 4: "8es de finale",
+             2: "Quarts de finale", 1: "Finale"}
+    rounds = []
+    for rd in [r32, r16, r8, r4, r2]:
+        clean = [m for m in rd if m]
+        if not clean:
+            continue
+        rounds.append({"name": NAMES.get(len(clean), f"Tour ({len(clean)})"),
+                       "matches": clean})
+
     return jsonify({
-        "rounds": [
-            {"name": "8es de finale (Round of 32)", "matches": [m for m in r32 if m]},
-            {"name": "16es (Round of 16)", "matches": [m for m in r16 if m]},
-            {"name": "Quarts de finale", "matches": [m for m in qf if m]},
-            {"name": "Demi-finales", "matches": [m for m in sf if m]},
-            {"name": "Finale", "matches": [m for m in final if m]},
-        ],
+        "rounds": rounds,
         "champion": champion,
         "champion_flag": champion_flag,
     })
