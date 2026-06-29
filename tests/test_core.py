@@ -176,3 +176,28 @@ def test_elo_multiplier_neutral_at_equal_strength():
 
     m = _elo_attack_multiplier(1500, 1500, is_home=False, strength=0.8)
     assert abs(m - 1.0) < 1e-9
+
+
+def test_plateau_fitness_flat_in_optimal_range():
+    """Le plateau : F=1.0 sur tout l'intervalle [30,45], <1 en dehors."""
+    from mpp_predictor.features.fitness import fitness
+    assert fitness(30, 30, 45, 12) == 1.0
+    assert fitness(38, 30, 45, 12) == 1.0
+    assert fitness(45, 30, 45, 12) == 1.0
+    assert fitness(60, 30, 45, 12) < 1.0   # fatigue
+    assert fitness(15, 30, 45, 12) < 1.0   # rouille
+
+
+def test_fatigue_reduces_attack():
+    """La fatigue (charge élevée) doit RÉDUIRE l'index d'attaque (sens correct)."""
+    from mpp_predictor.features.attack_index import compute_attack_index
+    from mpp_predictor.features.models import PlayedMatch
+
+    cfg = load_config()
+    matches = [PlayedMatch(2, 1, 1800, 5), PlayedMatch(3, 0, 1600, 15)]
+    fresh = TeamSnapshot("f", 1900, recent_matches=matches,
+        key_players=[KeyPlayer("p", True, 38) for _ in range(3)])
+    tired = TeamSnapshot("t", 1900, recent_matches=matches,
+        key_players=[KeyPlayer("p", True, 62) for _ in range(3)])
+    assert compute_attack_index(fresh, cfg).weighted_total > \
+           compute_attack_index(tired, cfg).weighted_total

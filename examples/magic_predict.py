@@ -41,9 +41,16 @@ if __name__ == '__main__':
     csv_path = "data/fatigue_overrides.csv"
     try:
         df_csv = pd.read_csv(csv_path)
-        # Mettre à jour les valeurs
+        # Mettre à jour les DEUX colonnes pour compatibilité totale avec le
+        # modèle (qui lit average_matches_played en priorité, sinon
+        # club_matches_last_year). On renseigne les deux par sécurité.
+        for col in ("average_matches_played", "club_matches_last_year"):
+            if col not in df_csv.columns:
+                df_csv[col] = None
         df_csv.loc[df_csv['team'] == t1, 'average_matches_played'] = round(f1, 1)
         df_csv.loc[df_csv['team'] == t2, 'average_matches_played'] = round(f2, 1)
+        df_csv.loc[df_csv['team'] == t1, 'club_matches_last_year'] = int(round(f1))
+        df_csv.loc[df_csv['team'] == t2, 'club_matches_last_year'] = int(round(f2))
         df_csv.to_csv(csv_path, index=False)
     except FileNotFoundError:
         print("Erreur : le template n'a pas pu être généré.")

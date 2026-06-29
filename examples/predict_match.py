@@ -38,23 +38,54 @@ CSV_PATH = Path(__file__).resolve().parents[1] / "data" / "raw" / "results.csv"
 FATIGUE_PATH = Path(__file__).resolve().parents[1] / "data" / "fatigue_overrides.csv"
 
 
+def _dc(cfg, key, default=0.0):
+    """Lecture défensive d'un paramètre poisson de la config."""
+    try:
+        return cfg.section("poisson", key)
+    except KeyError:
+        return default
+
+
 def _load_fatigue(team: str) -> list[KeyPlayer]:
     """Charge la charge des cadres d'une équipe depuis le fichier optionnel.
 
     Le fichier data/fatigue_overrides.csv est facultatif. S'il existe, il active
     le critère F (fatigue) pour les équipes qui y figurent. Sinon, fraîcheur
     neutre. Voir data/fatigue_overrides.example.csv pour le format.
+
+    Deux formats acceptés :
+    - colonne `club_matches_last_year` par joueur (saisie manuelle), OU
+    - colonne `average_matches_played` (remplie automatiquement par
+      magic_predict.py via Kaggle) : même valeur appliquée à tous les cadres.
+    Si les deux existent, `average_matches_played` (auto) a la priorité dès
+    qu'elle est renseignée.
     """
     if not FATIGUE_PATH.exists():
         return []
     fdf = pd.read_csv(FATIGUE_PATH)
     rows = fdf[fdf["team"].str.lower() == team.lower()]
     players = []
+    has_auto = "average_matches_played" in fdf.columns
     for _, r in rows.iterrows():
+        load = None
+        # Priorité à la valeur automatique si elle est présente et valide.
+        if has_auto and pd.notna(r.get("average_matches_played")):
+            try:
+                load = float(r["average_matches_played"])
+            except (TypeError, ValueError):
+                load = None
+        # Sinon, valeur manuelle par joueur.
+        if load is None and "club_matches_last_year" in fdf.columns:
+            try:
+                load = float(r["club_matches_last_year"])
+            except (TypeError, ValueError):
+                load = None
+        if load is None:
+            continue
         players.append(KeyPlayer(
             name=str(r["player"]),
             is_offensive=bool(r["is_offensive"]),
-            club_matches_last_year=int(r["club_matches_last_year"]),
+            club_matches_last_year=int(round(load)),
         ))
     return players
 
@@ -140,31 +171,49 @@ def predict(home: str, away: str) -> None:
         dc_rho = 0.0
     matrix = build_score_matrix(lam_home, lam_away,
                                 max_goals=cfg.section("poisson", "max_goals"),
-                                dixon_coles_rho=dc_rho)
+                                dixon_coles_rho=dc_rho,
+                                nb_dispersion=_dc(cfg, "nb_dispersion"),
+                                bivariate_cov=_dc(cfg, "bivariate_cov"),
+                                draw_boost=_dc(cfg, "draw_boost", 1.0))
     reco = recommend_prediction(matrix, cfg)
 
-    fatigue_note = ""
-    if home_fatigue or away_fatigue:
-        fatigue_note = " (critère fatigue actif)"
+    # --- FILTRE DE CONFIANCE ---
+    # Basé sur l'analyse des 661 matchs de backtest :
+    # - prob_prono < 8%  -> taux de hit = 0%  (ne jamais faire confiance)
+    # - prob_prono 8-12% -> taux de hit ~28%  (prudence)
+    # - prob_prono > 12% -> taux de hit ~46%  (confiance élevée)
+    prob_prono = float(matrix.matrix[reco.home_goals, reco.away_goals]) * 100
+    if prob_prono < 8.0:
+        confidence = "🔴 FAIBLE  — utilise ton jugement, le modèle est incertain"
+    elif prob_prono < 12.0:
+        confidence = "🟡 MOYENNE — le modèle trouve ce type de score ~28% du temps"
+    else:
+        confidence = "🟢 ÉLEVÉE  — le modèle trouve ce type de score ~46% du temps"
 
-    print("\n" + "=" * 52)
-    print(f"  PRÉDICTION : {home_ok}  vs  {away_ok}{fatigue_note}")
-    print("=" * 52)
-    print(f"Elo : {home_ok} {elo_home:.0f}  -  {elo_away:.0f} {away_ok}")
-    print(f"Espérance de buts : {home_ok} {lam_home:.2f} - {lam_away:.2f} {away_ok}")
-    print(f"\nProbabilités de résultat :")
-    print(f"  Victoire {home_ok:<12} : {matrix.prob_home_win():.1%}")
-    print(f"  Match nul            : {matrix.prob_draw():.1%}")
-    print(f"  Victoire {away_ok:<12} : {matrix.prob_away_win():.1%}")
-    print(f"\nScore le plus probable : "
-          f"{reco.most_likely_score[0]}-{reco.most_likely_score[1]} "
-          f"(probabilité {reco.most_likely_prob:.1%})")
-    print(f"\n>>> PRONO RECOMMANDÉ pour MPP : "
-          f"{reco.home_goals}-{reco.away_goals}")
-    print(f"    (espérance de points : {reco.expected_points:.2f})")
+    is_same = (reco.home_goals, reco.away_goals) == reco.most_likely_score
+    fatigue_note = " (fatigue active)" if (home_fatigue or away_fatigue) else ""
+
+    print("\n" + "=" * 56)
+    print(f"  {home_ok}  vs  {away_ok}{fatigue_note}")
+    print("=" * 56)
+    print(f"Force Elo : {elo_home:.0f} vs {elo_away:.0f}")
+    print(f"Buts attendus : {lam_home:.2f} – {lam_away:.2f}")
+    print()
+    print(f"  Victoire {home_ok:<14} : {matrix.prob_home_win():.0%}")
+    print(f"  Match nul              : {matrix.prob_draw():.0%}")
+    print(f"  Victoire {away_ok:<14} : {matrix.prob_away_win():.0%}")
+    print()
+    print(f">>> PRONO : {reco.home_goals}-{reco.away_goals}")
+    if is_same:
+        print(f"    C'est aussi le score le plus probable ({prob_prono:.0f}%)")
+    else:
+        print(f"    Score le plus probable : {reco.most_likely_score[0]}-{reco.most_likely_score[1]} ({reco.most_likely_prob:.0%})")
+        print(f"    Mais {reco.home_goals}-{reco.away_goals} rapporte plus de points en moyenne sur MPP")
+    print()
+    print(f"    {confidence}")
     if (reco.home_goals, reco.away_goals) != reco.most_likely_score:
-        print(f"    Note : différent du score le plus probable -> "
-              "c'est l'optimisation MPP qui joue.")
+        print(f"\n    Note : différent du score le plus probable -> "
+              "optimisation MPP active.")
     print()
 
 

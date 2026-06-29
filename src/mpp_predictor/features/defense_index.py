@@ -20,6 +20,7 @@ import math
 from dataclasses import dataclass
 
 from ..config import Config
+from .fitness import fitness
 from .models import TeamSnapshot
 
 
@@ -63,13 +64,14 @@ def _conceded_dynamics(team: TeamSnapshot, cfg: Config) -> float:
 
 
 def _defensive_freshness(team: TeamSnapshot, cfg: Config) -> float:
-    """Courbe en U inversé sur la charge des cadres défensifs.
+    """Plateau de forme sur la charge des cadres défensifs.
 
-    Renvoie un rendement dans ]0, 1] : 1 = défense fraîche et rodée. On le
-    transforme ensuite : une mauvaise fraîcheur AUGMENTE les buts encaissés.
+    Renvoie un facteur de permissivité : 1.0 = défense fraîche et rodée, >1.0
+    si fatiguée ou en manque de rythme (elle encaisse alors davantage).
     """
     section = cfg.section("defense_index", "freshness")
-    m_opt = float(section["optimal_matches"])
+    lo = float(section["optimal_low"])
+    hi = float(section["optimal_high"])
     sigma = float(section["sigma"])
     k = int(section["key_players_count"])
 
@@ -77,14 +79,10 @@ def _defensive_freshness(team: TeamSnapshot, cfg: Config) -> float:
     if not players:
         return 1.0
 
-    scores = []
-    for player in players:
-        m = player.club_matches_last_year
-        scores.append(math.exp(-((m - m_opt) ** 2) / (2 * sigma**2)))
+    scores = [fitness(p.club_matches_last_year, lo, hi, sigma) for p in players]
     rendement = sum(scores) / len(scores)
-    # Inverse : rendement défensif faible -> facteur de permissivité élevé.
-    # On borne pour rester stable.
-    return 2.0 - rendement  # rendement 1 -> 1.0 ; rendement 0.5 -> 1.5
+    # Inverse : rendement défensif faible -> permissivité élevée.
+    return 2.0 - rendement
 
 
 def _defensive_context(team: TeamSnapshot, cfg: Config) -> float:

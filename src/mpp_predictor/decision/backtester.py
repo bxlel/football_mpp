@@ -54,17 +54,21 @@ class BacktestResult:
 
 
 def _elo_attack_multiplier(
-    elo_for: float, elo_against: float, is_home: bool, strength: float = 0.8
+    elo_for: float, elo_against: float, is_home: bool, strength: float = 0.8,
+    home_advantage: float | None = None,
 ) -> float:
     """Multiplicateur d'attaque selon l'écart de force Elo.
 
     Une équipe nettement plus forte que son adversaire marque davantage. On
     convertit l'écart Elo en probabilité de victoire, recentrée autour de 1.0.
     `strength` règle l'intensité de l'effet (0 = neutre). Borné pour rester stable.
+    `home_advantage` : bonus terrain pour la prédiction (None = valeur globale ;
+    0 conseillé pour des matchs neutres comme la Coupe du Monde).
     """
     from ..features.elo import HOME_ADVANTAGE
 
-    bonus = HOME_ADVANTAGE if is_home else 0.0
+    ha = HOME_ADVANTAGE if home_advantage is None else home_advantage
+    bonus = ha if is_home else 0.0
     exp = 1.0 / (1.0 + 10 ** ((elo_against - (elo_for + bonus)) / 400.0))
     # exp=0.5 -> 1.0 quelle que soit strength ; s'écarte selon strength.
     mult = 1.0 + strength * (exp - 0.5) * 2.0
@@ -115,6 +119,26 @@ def run_backtest(
         elo_strength = cfg.section("elo", "strength")
     except KeyError:
         elo_strength = 0.8
+    try:
+        base_goals = cfg.section("poisson", "base_goals")
+    except KeyError:
+        base_goals = 1.30
+    try:
+        pred_ha = cfg.section("elo", "prediction_home_advantage")
+    except KeyError:
+        pred_ha = None
+    try:
+        nb_disp = cfg.section("poisson", "nb_dispersion")
+    except KeyError:
+        nb_disp = 0.0
+    try:
+        biv_cov = cfg.section("poisson", "bivariate_cov")
+    except KeyError:
+        biv_cov = 0.0
+    try:
+        draw_boost = cfg.section("poisson", "draw_boost")
+    except KeyError:
+        draw_boost = 1.0
 
     # --- Elo sans fuite de données ---
     # On calcule l'Elo à partir de TOUT l'historique antérieur à la période de
@@ -157,15 +181,16 @@ def run_backtest(
         # plus forte marque davantage. Facteur multiplicatif borné.
         elo_home = elo.get(home, INITIAL_ELO)
         elo_away = elo.get(away, INITIAL_ELO)
-        adj_home = _elo_attack_multiplier(elo_home, elo_away, is_home=True, strength=elo_strength)
-        adj_away = _elo_attack_multiplier(elo_away, elo_home, is_home=False, strength=elo_strength)
+        adj_home = _elo_attack_multiplier(elo_home, elo_away, is_home=True, strength=elo_strength, home_advantage=pred_ha)
+        adj_away = _elo_attack_multiplier(elo_away, elo_home, is_home=False, strength=elo_strength, home_advantage=pred_ha)
 
         # λ de chaque équipe = son attaque × permissivité adverse × ajust. Elo.
-        lam_home = indices_to_lambda(iag_home, opponent_defense_index=idg_away) * adj_home
-        lam_away = indices_to_lambda(iag_away, opponent_defense_index=idg_home) * adj_away
+        lam_home = indices_to_lambda(iag_home, opponent_defense_index=idg_away, base_goals=base_goals) * adj_home
+        lam_away = indices_to_lambda(iag_away, opponent_defense_index=idg_home, base_goals=base_goals) * adj_away
 
         matrix = build_score_matrix(lam_home, lam_away, max_goals=max_goals,
-                                     dixon_coles_rho=dc_rho)
+                                     dixon_coles_rho=dc_rho, nb_dispersion=nb_disp,
+                                     bivariate_cov=biv_cov, draw_boost=draw_boost)
         reco = recommend_prediction(matrix, cfg)
 
         model_pts += _points_for((reco.home_goals, reco.away_goals), actual, scoring)

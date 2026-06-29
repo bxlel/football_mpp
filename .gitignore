@@ -15,3 +15,13 @@ data/processed/*
 .DS_Store
 .ipynb_checkpoints/
 data/fatigue_overrides.csv
+
+# Fichiers CSV générés par les scripts (NE PAS pousser sur Git - cause des conflits)
+backtest_3_tournois.csv
+simulation_complete_2026.csv
+simulation_modele_vs_moi.csv
+comparaison_2026.csv
+full_features.csv
+hits_only.csv
+analysis/
+*.tar.gz

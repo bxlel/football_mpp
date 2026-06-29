@@ -16,7 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 import numpy as np
-from scipy.stats import poisson
+from scipy.stats import nbinom, poisson
 
 
 @dataclass(frozen=True)
@@ -52,6 +52,9 @@ def build_score_matrix(
     lambda_away: float,
     max_goals: int = 8,
     dixon_coles_rho: float = 0.0,
+    nb_dispersion: float = 0.0,
+    bivariate_cov: float = 0.0,
+    draw_boost: float = 1.0,
 ) -> ScoreMatrix:
     """Construit la matrice de scores à partir des deux espérances de buts.
 
@@ -61,13 +64,39 @@ def build_score_matrix(
         dixon_coles_rho: paramètre de correction des scores serrés. 0 = Poisson
             pur ; valeur typique négative (~-0.05 à -0.15) pour favoriser les
             nuls serrés.
+        nb_dispersion: sur-dispersion de la loi Binomiale Négative. 0 = Poisson
+            pur (variance = moyenne). >0 = variance plus grande que la moyenne
+            (buts plus erratiques), ce qui peut mieux coller au football réel.
+        bivariate_cov: covariance du modèle Bivarié de Poisson (lambda_3).
+            0 = scores indépendants ; >0 = corrélation positive entre les buts
+            des deux équipes (matchs ouverts/fermés). Incompatible avec nb.
     """
     if lambda_home <= 0 or lambda_away <= 0:
         raise ValueError("Les espérances de buts doivent être strictement positives.")
 
+    # --- Modèle Bivarié de Poisson (corrélation entre les deux scores) ---
+    if bivariate_cov and bivariate_cov > 0:
+        matrix = _bivariate_poisson(lambda_home, lambda_away, bivariate_cov, max_goals)
+        if dixon_coles_rho != 0.0:
+            tau = _dixon_coles_tau(lambda_home, lambda_away, dixon_coles_rho)
+            matrix[0, 0] *= tau[0]; matrix[0, 1] *= tau[1]
+            matrix[1, 0] *= tau[2]; matrix[1, 1] *= tau[3]
+        matrix /= matrix.sum()
+        return ScoreMatrix(matrix=matrix, lambda_home=lambda_home, lambda_away=lambda_away)
+
     goals = np.arange(max_goals + 1)
-    home_probs = poisson.pmf(goals, lambda_home)
-    away_probs = poisson.pmf(goals, lambda_away)
+    if nb_dispersion and nb_dispersion > 0:
+        # Binomiale Négative paramétrée par moyenne mu et dispersion alpha :
+        # variance = mu + alpha*mu^2. On convertit en (n, p) de scipy.
+        alpha = nb_dispersion
+        r = 1.0 / alpha
+        p_home = r / (r + lambda_home)
+        p_away = r / (r + lambda_away)
+        home_probs = nbinom.pmf(goals, r, p_home)
+        away_probs = nbinom.pmf(goals, r, p_away)
+    else:
+        home_probs = poisson.pmf(goals, lambda_home)
+        away_probs = poisson.pmf(goals, lambda_away)
 
     # Produit extérieur = matrice conjointe sous indépendance.
     matrix = np.outer(home_probs, away_probs)
@@ -83,7 +112,14 @@ def build_score_matrix(
         matrix[1, 0] *= tau[2]
         matrix[1, 1] *= tau[3]
 
-    # Renormalise (troncature de la queue + correction DC).
+    # --- Coup de pouce aux scores nuls ---
+    # Les matchs internationaux à enjeu finissent nuls un peu plus souvent que
+    # la moyenne. On amplifie légèrement la diagonale (0-0, 1-1, 2-2...).
+    if draw_boost != 1.0:
+        for d in range(min(matrix.shape)):
+            matrix[d, d] *= draw_boost
+
+    # Renormalise (troncature de la queue + corrections).
     matrix /= matrix.sum()
 
     return ScoreMatrix(matrix=matrix, lambda_home=lambda_home, lambda_away=lambda_away)
@@ -97,3 +133,29 @@ def _dixon_coles_tau(lh: float, la: float, rho: float) -> tuple[float, float, fl
         1.0 + la * rho,        # 1-0
         1.0 - rho,             # 1-1
     )
+
+
+def _bivariate_poisson(lh: float, la: float, cov: float, max_goals: int) -> np.ndarray:
+    """Matrice du modèle Bivarié de Poisson (Karlis & Ntzoufras).
+
+    X = W1 + W3, Y = W2 + W3, où W1,W2,W3 sont des Poisson indépendants de
+    moyennes (lh-cov, la-cov, cov). Le terme partagé W3 introduit une
+    corrélation positive entre les buts des deux équipes.
+    """
+    from math import comb, exp, factorial
+
+    l1 = max(lh - cov, 1e-6)
+    l2 = max(la - cov, 1e-6)
+    l3 = cov
+    n = max_goals + 1
+    mat = np.zeros((n, n))
+    base = exp(-(l1 + l2 + l3))
+    for x in range(n):
+        for y in range(n):
+            s = 0.0
+            for k in range(min(x, y) + 1):
+                s += (comb(x, k) * comb(y, k) * factorial(k)
+                      * (l1 ** (x - k)) * (l2 ** (y - k)) * (l3 ** k)
+                      / (factorial(x - k) * factorial(y - k)))
+            mat[x, y] = base * s
+    return mat

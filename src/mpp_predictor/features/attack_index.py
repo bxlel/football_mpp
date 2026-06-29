@@ -25,6 +25,7 @@ import math
 from dataclasses import dataclass
 
 from ..config import Config
+from .fitness import fitness
 from .models import TeamSnapshot
 
 
@@ -67,28 +68,47 @@ def _dynamics_score(team: TeamSnapshot, cfg: Config) -> float:
 
 
 def _freshness_score(team: TeamSnapshot, cfg: Config) -> float:
-    """Critère F : rendement moyen des cadres offensifs (courbe en U inversé).
+    """Critère F : forme/fraîcheur de l'équipe.
 
-    f(m) = exp( -((m - m_opt)^2) / (2σ²) )
-
-    Renvoie une valeur dans ]0, 1] : 1 au sweet spot, décroissante aux extrêmes.
-    Si aucun cadre offensif n'est renseigné, on renvoie 1.0 (neutre) plutôt que
-    de pénaliser une équipe par manque de données.
+    Deux modes :
+    1. Si des cadres offensifs sont renseignés (minutes club), on utilise la
+       courbe de forme classique (plateau).
+    2. Sinon, on retombe sur un proxy calculé à partir des VRAIES dates de
+       matchs : le repos avant le match. Trop peu de repos (enchaînement) ou
+       trop (manque de rythme) pénalise légèrement la fraîcheur offensive.
+       Activable via attack_index.freshness.use_rest_proxy.
     """
     section = cfg.section("attack_index", "freshness")
-    m_opt = float(section["optimal_matches"])
+    lo = float(section["optimal_low"])
+    hi = float(section["optimal_high"])
     sigma = float(section["sigma"])
     k = int(section["key_players_count"])
 
     players = team.offensive_players[:k]
-    if not players:
-        return 1.0
+    if players:
+        scores = [fitness(p.club_matches_last_year, lo, hi, sigma) for p in players]
+        return sum(scores) / len(scores)
 
-    scores = []
-    for player in players:
-        m = player.club_matches_last_year
-        scores.append(math.exp(-((m - m_opt) ** 2) / (2 * sigma**2)))
-    return sum(scores) / len(scores)
+    # --- Proxy basé sur le repos réel (si activé) ---
+    use_rest = bool(section.get("use_rest_proxy", False))
+    if use_rest and team.recent_matches:
+        last = min(team.recent_matches, key=lambda p: p.days_ago)
+        rest = last.days_ago
+        # Courbe : optimal autour de 4-7 jours de repos.
+        # < 3 j (enchaînement) ou > 10 j (manque de rythme) -> pénalité douce.
+        rest_opt_lo = float(section.get("rest_optimal_low", 4))
+        rest_opt_hi = float(section.get("rest_optimal_high", 8))
+        amp = float(section.get("rest_amplitude", 0.10))
+        if rest_opt_lo <= rest <= rest_opt_hi:
+            return 1.0
+        if rest < rest_opt_lo:
+            deficit = (rest_opt_lo - rest) / rest_opt_lo
+            return max(1.0 - amp, 1.0 - amp * deficit)
+        # rest > hi
+        excess = min(1.0, (rest - rest_opt_hi) / 14.0)
+        return max(1.0 - amp, 1.0 - amp * excess)
+
+    return 1.0
 
 
 def _context_factor(team: TeamSnapshot, cfg: Config) -> float:
@@ -123,17 +143,27 @@ def _context_factor(team: TeamSnapshot, cfg: Config) -> float:
 
 
 def compute_attack_index(team: TeamSnapshot, cfg: Config) -> AttackIndexBreakdown:
-    """Calcule l'Index d'Attaque Global et renvoie le détail par critère."""
+    """Calcule l'Index d'Attaque Global et renvoie le détail par critère.
+
+    Forme additive (calibrée, échelle compatible Poisson) :
+
+        IAG = w_D·D + w_F·(D·F) + w_C·C
+
+    - D : dynamique de buts récents (signal brut).
+    - F ∈ ]0,1] : forme physique des cadres. Le terme w_F·(D·F) vaut au plus
+      w_F·D (joueurs frais) et diminue quand ils sont cramés/rouillés. La
+      fatigue BRIDE donc bien la composante offensive — sens correct.
+    - C : multiplicateur de contexte, centré sur 1.0.
+
+    Sans donnée fatigue, F=1.0 : le terme vaut w_F·D, identique au modèle de
+    référence qui marquait 253 points au backtest.
+    """
     weights = cfg.attack_weights
 
     d = _dynamics_score(team, cfg)
     f = _freshness_score(team, cfg)
     c = _context_factor(team, cfg)
 
-    # D et F sont des scores ; C est un multiplicateur. On applique C au signal
-    # offensif (D·F) puis on recompose la combinaison linéaire pondérée. Ici on
-    # garde une forme additive lisible : C entre comme critère normalisé autour
-    # de sa valeur neutre.
     total = weights.dynamics * d + weights.freshness * f + weights.context * c
 
     return AttackIndexBreakdown(

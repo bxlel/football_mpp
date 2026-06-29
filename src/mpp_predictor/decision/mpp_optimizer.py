@@ -64,6 +64,7 @@ def recommend_prediction(
     score_matrix: ScoreMatrix,
     cfg: Config,
     popularity_penalty: Callable[[int, int], float] | None = None,
+    probability_blend: float | None = None,
 ) -> Recommendation:
     """Trouve le pronostic qui maximise l'espérance de points MPP.
 
@@ -73,16 +74,26 @@ def recommend_prediction(
         popularity_penalty: fonction optionnelle (h, a) -> facteur dans ]0, 1]
             appliqué à l'espérance d'un candidat pour décourager les scores
             trop consensuels dans la communauté. None = pas de pénalité.
+        probability_blend: si fourni, mélange l'espérance de points avec la
+            probabilité brute du score. 0 = pure espérance (comportement
+            d'origine) ; >0 pousse vers les scores les plus probables (utile
+            car le barème simplifié a tendance à fuir les nuls pourtant
+            probables). Lu depuis la config si None.
 
     Returns:
-        Le pronostic recommandé, distinct du score le plus probable quand le
-        barème le justifie.
+        Le pronostic recommandé.
     """
     scoring = cfg.section("mpp_scoring")
+    if probability_blend is None:
+        try:
+            probability_blend = cfg.section("decision", "probability_blend")
+        except KeyError:
+            probability_blend = 0.0
     matrix = score_matrix.matrix
     size = matrix.shape[0]
 
     best: Recommendation | None = None
+    best_objective = -1.0
     for ph in range(size):
         for pa in range(size):
             exp_points = 0.0
@@ -95,7 +106,12 @@ def recommend_prediction(
             if popularity_penalty is not None:
                 exp_points *= popularity_penalty(ph, pa)
 
-            if best is None or exp_points > best.expected_points:
+            # Objectif = espérance de points + bonus de probabilité brute.
+            # Le bonus est mis à l'échelle des points pour rester comparable.
+            objective = exp_points + probability_blend * float(matrix[ph, pa]) * 10.0
+
+            if best is None or objective > best_objective:
+                best_objective = objective
                 ml_i, ml_j = score_matrix.most_likely_score()
                 best = Recommendation(
                     home_goals=ph,

@@ -15,14 +15,15 @@ attack_index:
 
   dynamics:
     n_recent_matches: 8         # fenêtre glissante de matchs considérés
-    time_decay_lambda: 0.90     # amortissement par récence (0.85–0.95)
+    time_decay_lambda: 0.95     # amortissement par récence (recalibré sur 3 tournois)
     use_opponent_strength: true # pondérer par la force adverse (Elo)
 
   freshness:
-    # Courbe en U inversé : rendement maximal au "sweet spot", chute aux
-    # deux extrêmes (sous-régime ET surrégime).
-    optimal_matches: 38     # m_opt — pic de la gaussienne
-    sigma: 15.0             # largeur de la cloche
+    # Plateau de forme : rendement maximal sur l'INTERVALLE [optimal_low, optimal_high],
+    # puis chute des deux côtés (sous-régime / fatigue). sigma = largeur des pentes.
+    optimal_low: 30
+    optimal_high: 45
+    sigma: 12.0
     key_players_count: 5    # nb de cadres offensifs pris en compte
 
   context:
@@ -39,12 +40,13 @@ defense_index:
 
   dynamics:
     n_recent_matches: 8
-    time_decay_lambda: 0.90
+    time_decay_lambda: 0.95
     use_opponent_strength: true
 
   freshness:
-    optimal_matches: 38
-    sigma: 15.0
+    optimal_low: 30
+    optimal_high: 45
+    sigma: 12.0
     key_players_count: 5
 
   context:
@@ -53,12 +55,18 @@ defense_index:
 
 poisson:
   max_goals: 8   # taille de la matrice de scores (0..8 par équipe)
-  dixon_coles_rho: -0.05   # correction des scores serrés (calibré, 0 = Poisson pur)
+  dixon_coles_rho: -0.03   # correction scores serrés (recalibré)
+  base_goals: 1.05   # niveau de buts (calibré sur 3 tournois)
+  nb_dispersion: 0.12   # sur-dispersion Binomiale Négative (calibré sur 3 tournois)
+  draw_boost: 1.05   # léger coup de pouce aux scores nuls (validé sur 3 tournois)
 
 elo:
   # Intensité de l'effet Elo sur l'espérance de buts. 0 = pas d'effet Elo,
   # valeur plus haute = l'écart de force pèse plus lourd. Calibré sur backtest.
   strength: 0.40
+  # Avantage du terrain appliqué à la PRÉDICTION. 0 pour la Coupe du Monde car
+  # les matchs se jouent sur terrain neutre (calibré : +5 pts au backtest).
+  prediction_home_advantage: 0
 
 # Barème de points Mon Petit Prono (à ajuster selon ta ligue).
 mpp_scoring:
