@@ -56,6 +56,12 @@ def _load_state():
     return cfg, df, elo
 
 
+@app.route("/health")
+def health():
+    """Réponse instantanée pour que Render détecte le port tout de suite."""
+    return "ok", 200
+
+
 @app.route("/")
 def index():
     return send_from_directory(app.static_folder, "index.html")
